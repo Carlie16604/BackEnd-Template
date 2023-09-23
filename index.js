@@ -34,6 +34,9 @@ app.get('/api/movies', async(req, res, next) => {
 //works :D
 app.put('/api/movies/:id', async(req,res,next) =>{
   try {
+    if(req.body.stars < 1 || req.body.stars > 5){
+      throw new Error("Cannot go higher than 5 or lower than 1");
+    };
     const SQL = `
       UPDATE movies
       SET title = $1, stars = $2
@@ -46,6 +49,40 @@ app.put('/api/movies/:id', async(req,res,next) =>{
   } catch (error) {
     next(error)
   }
+});
+
+//works :D
+app.post('/api/movies/', async(req,res,next)=> {
+  try {
+    const SQL = `
+      INSERT INTO movies(title, stars)
+      VALUES ($1, $2)
+      RETURNING *
+    `;
+    const response = await client.query(SQL, [req.body.title, req.body.stars])
+    res.send(response.rows[0])
+  } catch (error) {
+    next(error)
+  }
+});
+
+//works :D
+app.delete('/api/movies/:id', async(req, res, next) => {
+  try {
+    const SQL = `
+    DELETE 
+    FROM movies
+    WHERE id=$1
+    `;
+    const response = await client.query(SQL, [req.params.id])
+    res.send(response)
+  } catch (error) {
+    next(error)
+  }
+});
+
+app.use((err, req, res, next) => {
+  res.status(500).send(err.message)
 });
 
 const init = async()=> {

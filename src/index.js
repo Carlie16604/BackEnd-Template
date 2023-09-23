@@ -1,51 +1,73 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import axios from 'axios';
+import AddMovieForm from './AddMovieForm';
 
 const App = ()=> {
   const [movies, setMovies] = useState([]);
+  const [error, setError] = useState('');
   
   useEffect(() => {
     const fetchMovies = async() => {
       const {data} = await axios.get('/api/movies/');
       setMovies(data);
-      console.log(data)
     }
     fetchMovies();
   }, []);
 
-  //copy & paste for decreaseRating
+  //both work :D
   const increaseRating = async(movie) => {
-    const newRating = movie.stars + 1
-    const {data} = await axios.put(`/api/movies/${movie.id}` , {title: movie.title, stars: newRating})
-
-    const newMovies = movies.map((movieMap) => {
-      if(movieMap.id === movie.id) {
-        return data 
-      } else {
-        return movieMap
-      };
-    });
-    setMovies(newMovies)
+    try {
+      setError('')
+      const newRating = movie.stars + 1
+      const {data} = await axios.put(`/api/movies/${movie.id}` , {title: movie.title, stars: newRating})
+      
+      const newMovies = movies.map((movieMap) => {
+        if(movieMap.id === movie.id) {
+          return data 
+        } else {
+          return movieMap
+        };
+      });
+      setMovies(newMovies)
+    } catch (error) {
+      setError(error.response.data)
+    }
   };
 
   const decreaseRating = async(movie) => {
-    const newRating = movie.stars - 1
-    const {data} = await axios.put(`/api/movies/${movie.id}` , {title: movie.title, stars: newRating})
+    try {
+      setError('')
+      const newRating = movie.stars - 1
+      const {data} = await axios.put(`/api/movies/${movie.id}` , {title: movie.title, stars: newRating})
+  
+      const newMovies = movies.map((movieMap) => {
+        if(movieMap.id === movie.id) {
+          return data 
+        } else {
+          return movieMap
+        }
+  
+      });
+      setMovies(newMovies)
+    } catch (error) {
+      setError(error.response.data)
+    }
+  };
 
-    const newMovies = movies.map((movieMap) => {
-      if(movieMap.id === movie.id) {
-        return data 
-      } else {
-        return movieMap
-      };
+  const deleteMovie = async (movie) => {
+    await axios.delete(`/api/movies/${movie.id}`)
+    const updatedMovieList = movies.filter((movieFilter)=> {
+      return (movieFilter.id !== movie.id)
     });
-    setMovies(newMovies)
+    setMovies(updatedMovieList)
   };
 
   return (
     <div>
       <h1>Carlie's Favorite Movies ({movies.length})</h1>
+      <p>{error? error: ""}</p>
+      <AddMovieForm movies={movies} setMovies={setMovies}/>
         <ul>
           {
             movies.map ((movie) => {
@@ -55,11 +77,11 @@ const App = ()=> {
                   <h4>
                     <span>
                       Rating: {movie.stars} stars
-                    </span>
-                    {/* if it gets to 5 or 1, disable button */}
                     <button onClick={() => {increaseRating(movie)}}>+</button>
                     <button onClick={() => {decreaseRating(movie)}}>-</button>
+                    </span>
                   </h4>
+                  <button onClick={() => {deleteMovie(movie)}}>Delete</button>
                 </li>
               );
             })
